@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>教师工作台</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="教师工作台">
+<meta name="theme-color" content="#1e40af">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #eef2f9; display: flex; justify-content: center;
+  min-height: 100vh; padding: 12px 10px 40px;
+}
+.workbench {
+  max-width: 430px; width: 100%; background: #ffffff;
+  border-radius: 32px; box-shadow: 0 20px 40px rgba(0,10,30,0.08);
+  padding: 24px 18px 28px; border: 1px solid rgba(230,240,255,0.8);
+}
+/* 头部 */
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.greeting-title { font-size: 19px; font-weight: 600; color: #0f172a; letter-spacing: -0.3px; }
+.greeting-sub { font-size: 13px; color: #64748b; margin-top: 5px; }
+.status-icons span {
+  background: #f1f5f9; width: 38px; height: 38px; display: inline-flex;
+  align-items: center; justify-content: center; border-radius: 50%;
+  font-size: 18px; margin-left: 8px; cursor: pointer;
+}
+.status-icons span:active { background: #e2e8f0; }
+
+/* 校历条 */
+.calendar-bar {
+  background: linear-gradient(105deg, #1e40af 0%, #3b82f6 100%);
+  border-radius: 20px; padding: 14px 18px; margin-bottom: 14px;
+  color: white; display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; box-shadow: 0 8px 20px -6px rgba(30,64,175,0.4);
+}
+.calendar-info { display: flex; flex-direction: column; gap: 3px; }
+.calendar-week { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.calendar-detail { font-size: 12px; opacity: 0.9; }
+.calendar-edit { font-size: 13px; opacity: 0.85; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 30px; }
+.calendar-empty .calendar-week { font-size: 15px; font-weight: 500; }
+
+/* 概览卡片 */
+.summary {
+  background: linear-gradient(105deg, #eef4ff 0%, #dbeafe 100%);
+  border-radius: 24px; padding: 16px 18px; margin-bottom: 16px;
+  border: 1px solid rgba(255,255,255,0.6);
+}
+.summary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.summary-label { font-size: 14px; font-weight: 600; color: #1e3a8a; }
+.summary-count { font-size: 14px; font-weight: 600; color: #1d4ed8; background: rgba(255,255,255,0.7); padding: 2px 12px; border-radius: 40px; }
+.progress-track { height: 8px; background: rgba(37,99,235,0.15); border-radius: 10px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: #2563eb; border-radius: 10px; transition: width 0.4s; }
+.summary-hint { display: flex; justify-content: space-between; font-size: 12px; color: #334155; margin-top: 10px; }
+
+/* 过滤器 */
+.filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0; padding: 8px 15px; border-radius: 40px;
+  font-size: 13px; font-weight: 500; background: #f1f5f9; color: #475569;
+  border: 1px solid #e2e8f0; cursor: pointer; white-space: nowrap;
+}
+.filter-chip.active { background: #1e40af; color: white; border-color: #1e40af; }
+
+/* 列表 */
+.section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 2px; }
+.section-title h3 { font-size: 16px; font-weight: 600; color: #0f172a; }
+.add-btn {
+  background: #1e40af; color: white; border: none; width: 36px; height: 36px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 300; cursor: pointer; box-shadow: 0 6px 14px rgba(30,64,175,0.3);
+}
+.add-btn:active { transform: scale(0.94); }
+
+.task-list { display: flex; flex-direction: column; gap: 10px; }
+.task-item {
+  background: #ffffff; border-radius: 20px; padding: 15px 15px 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04);
+  border: 1px solid #edf2f7; border-left-width: 6px;
+}
+.task-item.overdue { border-left-color: #dc2626; background: #fef2f2; }
+.task-item.urgent  { border-left-color: #f59e0b; background: #fffbeb; }
+.task-item.warning { border-left-color: #eab308; background: #fefce8; }
+.task-item.normal  { border-left-color: #3b82f6; background: #ffffff; }
+.task-item.done    { border-left-color: #94a3b8; background: #f8fafc; opacity: 0.75; }
+.task-item.course-type { border-left-style: dashed; }
+
+.task-main { display: flex; align-items: flex-start; gap: 11px; }
+.task-check {
+  flex-shrink: 0; width: 24px; height: 24px; border-radius: 8px;
+  border: 2px solid #cbd5e1; background: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+}
+.task-check.checked { background: #1e40af; border-color: #1e40af; }
+.task-check.checked::after { content: "✓"; color: white; font-size: 15px; font-weight: 700; }
+
+.task-content { flex: 1; min-width: 0; }
+.task-title { font-size: 15.5px; font-weight: 600; color: #0f172a; margin-bottom: 8px; line-height: 1.35; word-break: break-word; }
+.task-title.done-text { text-decoration: line-through; color: #94a3b8; font-weight: 500; }
+
+.task-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.tag { padding: 3px 10px; border-radius: 30px; font-weight: 500; font-size: 11.5px; }
+.tag.admin   { background: #fef3c7; color: #b45309; }
+.tag.course  { background: #dcfce7; color: #15803d; }
+.tag.project { background: #e0e7ff; color: #4338ca; }
+.tag.exam    { background: #fee2e2; color: #b91c1c; }
+.tag.other   { background: #f3e8ff; color: #7e22ce; }
+
+.deadline {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 30px; font-weight: 500; font-size: 11.5px;
+  background: #f1f5f9; color: #475569;
+}
+.deadline.overdue-text { background: #fee2e2; color: #b91c1c; }
+.deadline.urgent-text  { background: #fef3c7; color: #b45309; }
+.deadline.warning-text { background: #fefce8; color: #a16207; }
+
+.repeat-badge {
+  font-size: 11px; padding: 3px 9px; border-radius: 30px;
+  background: #dcfce7; color: #15803d; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+
+.milestone {
+  font-size: 11.5px; color: #64748b; padding: 4px 10px;
+  background: #f8fafc; border-radius: 30px; border: 1px dashed #cbd5e1;
+  margin-top: 6px; display: inline-block;
+}
+.delete-btn {
+  background: transparent; border: none; color: #cbd5e1;
+  font-size: 17px; cursor: pointer; padding: 3px 5px; border-radius: 8px; align-self: flex-start;
+}
+.delete-btn:active { background: #fee2e2; color: #dc2626; }
+
+.empty-state {
+  text-align: center; padding: 40px 20px; background: #f8fafc;
+  border-radius: 24px; color: #94a3b8; font-size: 14px; border: 1px dashed #cbd5e1;
+}
+.empty-state .em-icon { font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.6; }
+
+.footer-actions { display: flex; gap: 10px; margin-top: 18px; }
+.footer-btn {
+  flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+  border-radius: 60px; padding: 14px 0; font-size: 14px; font-weight: 500;
+  color: #334155; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 6px;
+}
+.footer-btn:active { background: #e2e8f0; }
+.footer-btn.primary { background: #1e40af; color: white; border: none; box-shadow: 0 8px 16px -4px rgba(30,64,175,0.3); }
+.footer-btn.primary:active { background: #1e3a8a; }
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+  display: none; align-items: flex-end; justify-content: center; z-index: 1000;
+}
+.modal-mask.show { display: flex; }
+.modal {
+  background: white; width: 100%; max-width: 430px;
+  border-radius: 28px 28px 0 0; padding: 22px 20px 32px;
+  animation: slideUp 0.25s ease; max-height: 92vh; overflow-y: auto;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.modal-header h3 { font-size: 17px; font-weight: 600; color: #0f172a; }
+.modal-close { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; color: #64748b; cursor: pointer; }
+
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 13px; font-weight: 500; color: #475569; margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 12px 14px; border-radius: 14px;
+  border: 1.5px solid #e2e8f0; background: #f8fafc;
+  font-size: 15px; color: #0f172a; font-family: inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #1e40af; background: white; }
+.form-textarea { resize: none; height: 60px; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-hint { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.submit-btn {
+  width: 100%; padding: 15px; border-radius: 16px; border: none;
+  background: #1e40af; color: white; font-size: 16px; font-weight: 600;
+  cursor: pointer; margin-top: 8px; box-shadow: 0 8px 16px -4px rgba(30,64,175,0.35);
+}
+.submit-btn:active { background: #1e3a8a; }
+.submit-btn.secondary { background: #f1f5f9; color: #334155; box-shadow: none; }
+
+.quick-time { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.quick-time button {
+  padding: 6px 12px; font-size: 12px; border-radius: 30px;
+  background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; cursor: pointer;
+}
+.quick-time button:active { background: #e2e8f0; }
+
+/* 课程循环设置区 */
+#courseRepeatGroup { display: none; }
+#courseRepeatGroup.show { display: block; }
+
+.weekday-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.weekday-picker label {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 12px;
+  background: #f1f5f9; border: 1.5px solid #e2e8f0;
+  font-size: 13px; color: #475569; cursor: pointer; font-weight: 500;
+  user-select: none;
+}
+.weekday-picker label.checked { background: #1e40af; color: white; border-color: #1e40af; }
+
+.week-range { display: flex; gap: 10px; align-items: center; }
+.week-range .form-group { flex: 1; margin-bottom: 0; }
+.week-range span { color: #94a3b8; font-size: 14px; flex-shrink: 0; }
+
+/* 校历编辑弹窗 */
+.calendar-form .form-row { margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="workbench">
+  <!-- 头部 -->
+  <div class="header">
+    <div>
+      <div class="greeting-title" id="greetingTitle">老师，您好</div>
+      <div class="greeting-sub" id="greetingSub">今天也要从容不迫</div>
+    </div>
+    <div class="status-icons">
+      <span id="calendarBtn" title="校历设置">📅</span>
+      <span id="addBtnTop" title="添加事务">➕</span>
+    </div>
+  </div>
+
+  <!-- 校历条 -->
+  <div class="calendar-bar" id="calendarBar">
+    <div class="calendar-info" id="calendarInfo">
+      <div class="calendar-week">尚未设置学期</div>
+      <div class="calendar-detail">点击设置开学日期与总周数</div>
+    </div>
+    <div class="calendar-edit">设置</div>
+  </div>
+
+  <!-- 概览 -->
+  <div class="summary">
+    <div class="summary-header">
+      <span class="summary-label">事务总览</span>
+      <span class="summary-count" id="countEl">0/0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="summary-hint">
+      <span id="doneHint">已完成 0 项</span>
+      <span id="pendingHint">剩余 0 项</span>
+    </div>
+  </div>
+
+  <!-- 分类过滤 -->
+  <div class="filter-bar" id="filterBar">
+    <div class="filter-chip active" data-filter="all">全部</div>
+    <div class="filter-chip" data-filter="admin">行政</div>
+    <div class="filter-chip" data-filter="course">课程</div>
+    <div class="filter-chip" data-filter="project">项目申报</div>
+    <div class="filter-chip" data-filter="exam">监考</div>
+    <div class="filter-chip" data-filter="other">其他</div>
+  </div>
+
+  <!-- 列表 -->
+  <div class="section-title">
+    <h3 id="listTitle">全部事务</h3>
+    <button class="add-btn" id="addBtn">+</button>
+  </div>
+  <div class="task-list" id="taskList"></div>
+
+  <!-- 底部 -->
+  <div class="footer-actions">
+    <button class="footer-btn" id="urgentBtn">⏰ 紧急</button>
+    <button class="footer-btn primary" id="clearBtn">✓ 清理已完成</button>
+  </div>
+</div>
+
+<!-- ========== 事务弹窗 ========== -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">添加事务</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">事务名称</label>
+      <input type="text" class="form-input" id="inputTitle" placeholder="如：高等数学 / 期末监考">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">类型</label>
+      <select class="form-select" id="inputType">
+        <option value="admin">📋 行政</option>
+        <option value="course">🎓 课程（按教学周循环）</option>
+        <option value="project">📊 项目申报</option>
+        <option value="exam">📝 监考</option>
+        <option value="other">💡 其他</option>
+      </select>
+    </div>
+
+    <!-- 课程循环设置（仅课程类型显示） -->
+    <div id="courseRepeatGroup">
+      <div class="form-group">
+        <label class="form-label">每周上课日</label>
+        <div class="weekday-picker" id="weekdayPicker">
+          <label data-day="1">一</label>
+          <label data-day="2">二</label>
+          <label data-day="3">三</label>
+          <label data-day="4">四</label>
+          <label data-day="5">五</label>
+          <label data-day="6">六</label>
+          <label data-day="0">日</label>
+        </div>
+        <div class="form-hint">可多选，如周二、周四都上课就都点亮</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">上课周次范围</label>
+        <div class="week-range">
+          <div class="form-group">
+            <input type="number" class="form-input" id="inputWeekFrom" min="1" placeholder="起始周" value="1">
+          </div>
+          <span>—</span>
+          <div class="form-group">
+            <input type="number" class="form-input" id="inputWeekTo" min="1" placeholder="结束周" value="16">
+          </div>
+        </div>
+        <div class="form-hint">如第1周到第16周，就填 1 和 16</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">周次类型</label>
+        <select class="form-select" id="inputWeekType">
+          <option value="all">每周</option>
+          <option value="odd">单周（第1、3、5...周）</option>
+          <option value="even">双周（第2、4、6...周）</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">上课时间</label>
+        <input type="time" class="form-input" id="inputCourseTime" value="08:00">
+        <div class="form-hint">每次上课的固定时间</div>
+      </div>
+    </div>
+
+    <!-- 普通事务日期时间（非课程类型显示） -->
+    <div id="datetimeGroup">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">截止日期</label>
+          <input type="date" class="form-input" id="inputDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">时间</label>
+          <input type="time" class="form-input" id="inputTime">
+        </div>
+      </div>
+      <div class="quick-time" id="quickTime">
+        <button type="button" data-offset="0">今天下班</button>
+        <button type="button" data-offset="1">明天上午</button>
+        <button type="button" data-offset="3">3天后</button>
+        <button type="button" data-offset="7">一周后</button>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">备注（可选）</label>
+      <textarea class="form-textarea" id="inputNote" placeholder="如：教室A302 / 需带监考证"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">保存事务</button>
+  </div>
+</div>
+
+<!-- ========== 校历设置弹窗 ========== -->
+<div class="modal-mask" id="calendarModalMask">
+  <div class="modal calendar-form">
+    <div class="modal-header">
+      <h3>学期校历设置</h3>
+      <button class="modal-close" id="calendarModalClose">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">学期名称</label>
+      <input type="text" class="form-input" id="calSemesterName" placeholder="如：2025-2026学年第一学期">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">开学日期（第1周周一）</label>
+        <input type="date" class="form-input" id="calStartDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">总教学周数</label>
+        <input type="number" class="form-input" id="calTotalWeeks" min="1" max="30" value="20">
+      </div>
+    </div>
+
+    <div class="form-hint" style="margin-bottom:14px;">
+      💡 系统按开学日期的周一作为第1周起点，请确认开学日期是周一
+    </div>
+
+    <button class="submit-btn" id="saveCalendarBtn">保存校历</button>
+    <button class="submit-btn secondary" id="clearCalendarBtn" style="margin-top:10px;">清除校历</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ============ 类型配置 ============
+  const TYPE_META = {
+    admin:   { label: '行政',    warnHours: 24, urgentHours: 4,  color: 'admin' },
+    course:  { label: '课程',    warnHours: 24, urgentHours: 2,  color: 'course' },
+    project: { label: '项目申报', warnHours: 72, urgentHours: 12, color: 'project' },
+    exam:    { label: '监考',    warnHours: 24, urgentHours: 6,  color: 'exam' },
+    other:   { label: '其他',    warnHours: 12, urgentHours: 4,  color: 'other' },
+  };
+  const WEEKDAY_NAMES = ['日','一','二','三','四','五','六'];
+  const STORAGE_KEY = 'teacher_workbench_v4';
+  const CAL_KEY = 'teacher_calendar_v1';
+
+  let tasks = [];
+  let calendar = null;   // { semesterName, startDate: Date, totalWeeks }
+  let currentFilter = 'all';
+
+  // ============ 加载数据 ============
+  function loadAll() {
+    // 校历
+    const calRaw = localStorage.getItem(CAL_KEY);
+    if (calRaw) {
+      try {
+        const c = JSON.parse(calRaw);
+        calendar = { ...c, startDate: new Date(c.startDate) };
+      } catch(e) {}
+    }
+    // 事务
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const arr = JSON.parse(raw);
+        tasks = arr.map(t => ({
+          ...t,
+          deadline: t.deadline ? new Date(t.deadline) : null,
+        }));
+        return;
+      } catch(e) {}
+    }
+    // 演示数据
+    initDemo();
+  }
+
+  function initDemo() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const makeDate = (dOff, h, m) => {
+      const d = new Date(today); d.setDate(d.getDate()+dOff); d.setHours(h,m,0,0); return d;
+    };
+    // 假设今天在某学期第 8 周附近
+    // 让今天往前推 7 周的周一作为开学日
+    const monday = new Date(today);
+    const day = monday.getDay(); // 0=周日
+    const diff = (day === 0 ? 6 : day - 1); // 距离本周一
+    monday.setDate(monday.getDate() - diff);
+    monday.setDate(monday.getDate() - 7 * 7); // 再往前 7 周 → 第1周周一
+
+    calendar = {
+      semesterName: '2025-2026学年 第一学期',
+      startDate: monday,
+      totalWeeks: 20
+    };
+
+    tasks = [
+      {
+        id: 'demo-course-1', title: '高等数学',
+        type: 'course', isCourse: true,
+        weekdays: [2, 4], weekFrom: 1, weekTo: 16, weekType: 'all',
+        timeHour: 10, timeMinute: 0,
+        note: '教室 A302',
+        completed: false
+      },
+      {
+        id: 'demo-exam-1', title: '《大学物理》期末监考',
+        type: 'exam', deadline: makeDate(1, 9, 0),
+        note: '提前30分钟到教务办领卷',
+        completed: false
+      },
+      {
+        id: 'demo-project-1', title: '国家自然科学基金面上项目申报',
+        type: 'project', deadline: makeDate(5, 17, 0),
+        note: '校内初审提前提交',
+        completed: false
+      },
+      {
+        id: 'demo-admin-1', title: '提交本学期教学进度表',
+        type: 'admin', deadline: makeDate(2, 12, 0),
+        note: '',
+        completed: false
+      }
+    ];
+    saveAll();
+  }
+
+  function saveAll() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    if (calendar) {
+      localStorage.setItem(CAL_KEY, JSON.stringify(calendar));
+    } else {
+      localStorage.removeItem(CAL_KEY);
+    }
+  }
+
+  // ============ 校历工具 ============
+  // 获取第 N 周的周一日期
+  function getWeekMonday(weekNum) {
+    if (!calendar) return null;
+    const d = new Date(calendar.startDate);
+    d.setDate(d.getDate() + (weekNum - 1) * 7);
+    return d;
+  }
+
+  // 判断某日期属于第几教学周（1-based），不在学期内返回 null
+  function getWeekNumber(date) {
+    if (!calendar) return null;
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const start = new Date(calendar.startDate);
+    start.setHours(0,0,0,0);
+    const diffDays = Math.floor((d - start) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return null;
+    const week = Math.floor(diffDays / 7) + 1;
+    if (week > calendar.totalWeeks) return null;
+    return week;
+  }
+
+  // 获取当前是第几周
+  function getCurrentWeek() {
+    return getWeekNumber(new Date());
+  }
+
+  // ============ 课程下一次上课时间计算 ============
+  // 返回该课程所有未来上课时间中的"下一次"，找不到返回 null
+  function getNextCourseOccurrence(task) {
+    if (!calendar) return null;
+    if (!task.weekdays || !task.weekdays.length) return null;
+
+    const now = new Date();
+    const fromWeek = Math.max(1, getWeekNumber(now) || 1);
+    const maxWeek = task.weekTo || calendar.totalWeeks;
+
+    // 从当前周开始往后找，最多找到学期末
+    for (let w = fromWeek; w <= maxWeek; w++) {
+      // 单双周过滤
+      if (task.weekType === 'odd' && w % 2 === 0) continue;
+      if (task.weekType === 'even' && w % 2 === 1) continue;
+
+      const monday = getWeekMonday(w);
+      if (!monday) continue;
+
+      // 该周内的所有上课日
+      for (const wd of task.weekdays) {
+        // monday 是周一（day=1）
+        const offset = (wd === 0 ? 6 : wd - 1); // 周日算第7天
+        const d = new Date(monday);
+        d.setDate(d.getDate() + offset);
+        d.setHours(task.timeHour || 0, task.timeMinute || 0, 0, 0);
+
+        if (d >= now && w >= (task.weekFrom || 1)) {
+          return d;
+        }
+      }
+    }
+    return null;
+  }
+
+  // 获取课程当前显示的状态
+  function getCourseStatus(task) {
+    const next = getNextCourseOccurrence(task);
+    if (!next) return { status: 'done', next: null, hoursLeft: Infinity };
+    const hoursLeft = (next - new Date()) / (1000 * 60 * 60);
+    let status = 'normal';
+    if (hoursLeft < 0) status = 'overdue';
+    else if (hoursLeft <= 2) status = 'urgent';
+    else if (hoursLeft <= 24) status = 'warning';
+    return { status, next, hoursLeft };
+  }
+
+  // ============ 通用状态判断（非课程） ============
+  function getHoursLeft(task) {
+    if (!task.deadline) return Infinity;
+    return (task.deadline - new Date()) / (1000 * 60 * 60);
+  }
+  function getStatus(task) {
+    if (task.completed) return 'done';
+    const hrs = getHoursLeft(task);
+    const meta = TYPE_META[task.type] || TYPE_META.other;
+    if (hrs < 0) return 'overdue';
+    if (hrs <= meta.urgentHours) return 'urgent';
+    if (hrs <= meta.warnHours) return 'warning';
+    return 'normal';
+  }
+
+  // ============ 渲染校历条 ============
+  function renderCalendarBar() {
+    const bar = document.getElementById('calendarBar');
+    const info = document.getElementById('calendarInfo');
+    if (!calendar) {
+      info.innerHTML = `
+        <div class="calendar-week">尚未设置学期</div>
+        <div class="calendar-detail">点击设置开学日期与总周数</div>
+      `;
+      bar.classList.add('calendar-empty');
+      return;
+    }
+    bar.classList.remove('calendar-empty');
+    const curWeek = getCurrentWeek();
+    const now = new Date();
+    const isBefore = curWeek === null && now < calendar.startDate;
+    const isAfter = curWeek === null && now >= calendar.startDate;
+
+    let weekText = '';
+    let detailText = '';
+    if (curWeek !== null) {
+      weekText = `第 ${curWeek} 教学周`;
+      detailText = `${calendar.semesterName} · 共 ${calendar.totalWeeks} 周 · 剩余 ${calendar.totalWeeks - curWeek + 1} 周`;
+    } else if (isBefore) {
+      const days = Math.ceil((calendar.startDate - now) / (1000*60*60*24));
+      weekText = `距开学还有 ${days} 天`;
+      detailText = `${calendar.semesterName} · ${calendar.startDate.getFullYear()}/${calendar.startDate.getMonth()+1}/${calendar.startDate.getDate()} 开学`;
+    } else {
+      weekText = '学期已结束';
+      detailText = `${calendar.semesterName} · 共 ${calendar.totalWeeks} 周`;
+    }
+    info.innerHTML = `
+      <div class="calendar-week">${weekText}</div>
+      <div class="calendar-detail">${detailText}</div>
+    `;
+  }
+
+  // ============ 渲染主界面 ============
+  function render() {
+    // 问候
+    const now = new Date();
+    const hour = now.getHours();
+    let greet = '老师，您好';
+    if (hour < 6) greet = '夜深了，早点休息';
+    else if (hour < 9) greet = '早安，老师';
+    else if (hour < 12) greet = '上午好，老师';
+    else if (hour < 14) greet = '中午好，老师';
+    else if (hour < 18) greet = '下午好，老师';
+    else greet = '晚上好，老师';
+    document.getElementById('greetingTitle').textContent = greet;
+
+    // 今日待办统计（课程按下一次上课是否今天算）
+    const todayStr = now.toDateString();
+    let todayPending = 0;
+    tasks.forEach(t => {
+      if (t.completed) return;
+      if (t.type === 'course') {
+        const next = getNextCourseOccurrence(t);
+        if (next && next.toDateString() === todayStr) todayPending++;
+      } else if (t.deadline && t.deadline.toDateString() === todayStr) {
+        todayPending++;
+      }
+    });
+    document.getElementById('greetingSub').textContent =
+      todayPending > 0 ? `今天还有 ${todayPending} 项事务待处理` : '今日事务已全部妥善安排 ✨';
+
+    // 校历条
+    renderCalendarBar();
+
+    // 标题
+    document.getElementById('listTitle').textContent = currentFilter === 'all'
+      ? '全部事务' : `${TYPE_META[currentFilter].label}事务`;
+
+    // 过滤
+    let filtered = tasks;
+    if (currentFilter !== 'all') filtered = filtered.filter(t => t.type === currentFilter);
+
+    // 排序
+    filtered = [...filtered].sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      const da = getEffectiveDeadline(a);
+      const db = getEffectiveDeadline(b);
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    // 统计（课程不计入完成分母）
+    const countable = tasks.filter(t => t.type !== 'course');
+    const total = countable.length;
+    const done = countable.filter(t => t.completed).length;
+    document.getElementById('countEl').textContent = `${done}/${total}`;
+    document.getElementById('progressFill').style.width = total ? (done/total*100)+'%' : '0%';
+    document.getElementById('doneHint').textContent = `已完成 ${done} 项`;
+    document.getElementById('pendingHint').textContent = `剩余 ${total - done} 项`;
+
+    // 列表
+    const listEl = document.getElementById('taskList');
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div class="empty-state">
+        <span class="em-icon">📋</span>
+        ${currentFilter === 'all' ? '还没有事务，点击右上角 + 添加' : '该分类下暂无事务'}
+      </div>`;
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(task => {
+      const meta = TYPE_META[task.type] || TYPE_META.other;
+      const isCourse = task.type === 'course';
+
+      let status, deadlineText, deadlineClass, remaining, repeatBadge = '';
+
+      if (isCourse) {
+        const cs = getCourseStatus(task);
+        status = cs.status;
+        const next = cs.next;
+
+        if (!next) {
+          deadlineText = '本学期课程已结束';
+          deadlineClass = '';
+        } else {
+          deadlineText = formatDate(next);
+          remaining = formatRemaining(cs.hoursLeft);
+          if (status === 'urgent') { deadlineClass = 'urgent-text'; deadlineText = `⏰ ${deadlineText} · ${remaining}`; }
+          else if (status === 'warning') { deadlineClass = 'warning-text'; deadlineText = `⏱ ${deadlineText} · ${remaining}`; }
+          else if (status === 'overdue') { deadlineClass = 'overdue-text'; deadlineText = `⚠ ${deadlineText} · ${remaining}`; }
+          else { deadlineText = `⏱ ${deadlineText} · ${remaining}`; }
+        }
+
+        // 循环标记
+        const days = (task.weekdays || []).map(d => '周' + WEEKDAY_NAMES[d]).join('、');
+        const weekTypeText = task.weekType === 'odd' ? '单周' : task.weekType === 'even' ? '双周' : '';
+        repeatBadge = `<span class="repeat-badge">🔁 ${weekTypeText} ${days} · 第${task.weekFrom}-${task.weekTo}周</span>`;
+      } else {
+        status = getStatus(task);
+        deadlineText = task.deadline ? formatDate(task.deadline) : '未设置';
+        remaining = task.deadline ? formatRemaining(getHoursLeft(task)) : '';
+        if (status === 'overdue') { deadlineClass = 'overdue-text'; deadlineText = `⚠ ${deadlineText} · ${remaining}`; }
+        else if (status === 'urgent') { deadlineClass = 'urgent-text'; deadlineText = `⏰ ${deadlineText} · ${remaining}`; }
+        else if (status === 'warning') { deadlineClass = 'warning-text'; deadlineText = `⏱ ${deadlineText} · ${remaining}`; }
+      }
+
+      const noteHtml = task.note ? `<div class="milestone">📌 ${escapeHtml(task.note)}</div>` : '';
+
+      html += `
+        <div class="task-item ${status} ${isCourse ? 'course-type' : ''}" data-id="${task.id}">
+          <div class="task-main">
+            <div class="task-check ${task.completed ? 'checked' : ''}" data-check="${task.id}"></div>
+            <div class="task-content">
+              <div class="task-title ${task.completed ? 'done-text' : ''}">${escapeHtml(task.title)}</div>
+              <div class="task-meta">
+                <span class="tag ${meta.color}">${meta.label}</span>
+                <span class="deadline ${deadlineClass}">${deadlineText}</span>
+                ${repeatBadge}
+              </div>
+              ${noteHtml}
+            </div>
+            <button class="delete-btn" data-del="${task.id}">✕</button>
+          </div>
+        </div>
+      `;
+    });
+    listEl.innerHTML = html;
+    bindTaskEvents();
+  }
+
+  function getEffectiveDeadline(task) {
+    if (task.type === 'course') {
+      const next = getNextCourseOccurrence(task);
+      return next;
+    }
+    return task.deadline;
+  }
+
+  function formatDate(date) {
+    if (!date) return '未设置';
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const tm = new Date(now); tm.setDate(tm.getDate()+1);
+    const isTomorrow = date.toDateString() === tm.toDateString();
+    const hh = date.getHours().toString().padStart(2,'0');
+    const mm = date.getMinutes().toString().padStart(2,'0');
+    const timeStr = `${hh}:${mm}`;
+    const week = getWeekNumber(date);
+    const weekTag = week ? `第${week}周` : '';
+    const weekday = '周' + WEEKDAY_NAMES[date.getDay()];
+    if (isToday) return `今天 ${timeStr}`;
+    if (isTomorrow) return `明天 ${timeStr}`;
+    return `${date.getMonth()+1}/${date.getDate()} ${weekday}${weekTag ? '·'+weekTag : ''} ${timeStr}`;
+  }
+
+  function formatRemaining(hoursLeft) {
+    if (hoursLeft === Infinity) return '';
+    if (hoursLeft < 0) {
+      const oh = Math.abs(hoursLeft);
+      if (oh < 24) return `已逾期 ${Math.floor(oh)} 小时`;
+      return `已逾期 ${Math.floor(oh/24)} 天`;
+    }
+    if (hoursLeft < 1) return `剩 ${Math.floor(hoursLeft*60)} 分钟`;
+    if (hoursLeft < 24) return `剩 ${Math.floor(hoursLeft)} 小时`;
+    return `剩 ${Math.floor(hoursLeft/24)} 天`;
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function bindTaskEvents() {
+    document.querySelectorAll('[data-check]').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = el.dataset.check;
+        const t = tasks.find(x => x.id === id);
+        if (!t) return;
+        if (t.type === 'course') {
+          alert('课程为按周循环提醒，无需勾选完成。\n如需停课，请删除该课程。');
+          return;
+        }
+        t.completed = !t.completed;
+        saveAll(); render();
+      });
+    });
+    document.querySelectorAll('[data-del]').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = el.dataset.del;
+        const t = tasks.find(x => x.id === id);
+        const msg = (t && t.type === 'course') ? '确定删除该循环课程吗？' : '确定删除该事务吗？';
+        if (confirm(msg)) {
+          tasks = tasks.filter(x => x.id !== id);
+          saveAll(); render();
+        }
+      });
+    });
+  }
+
+  // ============ 事务弹窗 ============
+  const modalMask = document.getElementById('modalMask');
+  const inputTitle = document.getElementById('inputTitle');
+  const inputType = document.getElementById('inputType');
+  const inputDate = document.getElementById('inputDate');
+  const inputTime = document.getElementById('inputTime');
+  const inputNote = document.getElementById('inputNote');
+  const courseRepeatGroup = document.getElementById('courseRepeatGroup');
+  const datetimeGroup = document.getElementById('datetimeGroup');
+  const weekdayPicker = document.getElementById('weekdayPicker');
+  const inputWeekFrom = document.getElementById('inputWeekFrom');
+  const inputWeekTo = document.getElementById('inputWeekTo');
+  const inputWeekType = document.getElementById('inputWeekType');
+  const inputCourseTime = document.getElementById('inputCourseTime');
+  const quickTime = document.getElementById('quickTime');
+
+  let selectedWeekdays = [];
+
+  weekdayPicker.querySelectorAll('label').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      const day = parseInt(lbl.dataset.day);
+      if (selectedWeekdays.includes(day)) selectedWeekdays = selectedWeekdays.filter(d => d !== day);
+      else selectedWeekdays.push(day);
+      renderWeekdayPicker();
+    });
+  });
+  function renderWeekdayPicker() {
+    weekdayPicker.querySelectorAll('label').forEach(lbl => {
+      const day = parseInt(lbl.dataset.day);
+      lbl.classList.toggle('checked', selectedWeekdays.includes(day));
+    });
+  }
+
+  inputType.addEventListener('change', () => {
+    const isCourse = inputType.value === 'course';
+    courseRepeatGroup.classList.toggle('show', isCourse);
+    datetimeGroup.style.display = isCourse ? 'none' : 'block';
+  });
+
+  function openModal() {
+    inputTitle.value = '';
+    inputType.value = currentFilter === 'all' ? 'admin' : currentFilter;
+    inputNote.value = '';
+    selectedWeekdays = [];
+    renderWeekdayPicker();
+    inputWeekFrom.value = 1;
+    inputWeekTo.value = calendar ? calendar.totalWeeks : 16;
+    inputWeekType.value = 'all';
+    inputCourseTime.value = '08:00';
+
+    const now = new Date();
+    const t = new Date(now); t.setDate(t.getDate()+1); t.setHours(9,0,0,0);
+    inputDate.value = t.toISOString().slice(0,10);
+    inputTime.value = '09:00';
+
+    const isCourse = inputType.value === 'course';
+    courseRepeatGroup.classList.toggle('show', isCourse);
+    datetimeGroup.style.display = isCourse ? 'none' : 'block';
+
+    modalMask.classList.add('show');
+  }
+  function closeModal() { modalMask.classList.remove('show'); }
+
+  document.getElementById('addBtn').addEventListener('click', openModal);
+  document.getElementById('addBtnTop').addEventListener('click', openModal);
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  modalMask.addEventListener('click', e => { if (e.target === modalMask) closeModal(); });
+
+  quickTime.addEventListener('click', e => {
+    if (e.target.tagName !== 'BUTTON') return;
+    const offset = parseInt(e.target.dataset.offset);
+    const now = new Date();
+    const t = new Date(now); t.setDate(t.getDate() + offset);
+    if (offset === 0) t.setHours(18, 0, 0, 0);
+    else t.setHours(9, 0, 0, 0);
+    inputDate.value = t.toISOString().slice(0,10);
+    inputTime.value = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+  });
+
+  // 保存事务
+  document.getElementById('submitBtn').addEventListener('click', () => {
+    const title = inputTitle.value.trim();
+    if (!title) { alert('请填写事务名称'); return; }
+    const type = inputType.value;
+
+    if (type === 'course') {
+      if (!calendar) { alert('请先设置学期校历，再添加课程'); return; }
+      if (selectedWeekdays.length === 0) { alert('请至少选择一个每周上课日'); return; }
+      const from = parseInt(inputWeekFrom.value);
+      const to = parseInt(inputWeekTo.value);
+      if (!from || !to || from < 1 || to < from || to > calendar.totalWeeks) {
+        alert(`周次范围无效，应在 1 到 ${calendar.totalWeeks} 之间且起始≤结束`);
+        return;
+      }
+      const timeParts = inputCourseTime.value.split(':');
+      const hh = parseInt(timeParts[0]) || 0;
+      const mm = parseInt(timeParts[1]) || 0;
+
+      tasks.push({
+        id: 't-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+        title, type, isCourse: true,
+        weekdays: [...selectedWeekdays],
+        weekFrom: from, weekTo: to, weekType: inputWeekType.value,
+        timeHour: hh, timeMinute: mm,
+        note: inputNote.value.trim(),
+        completed: false
+      });
+    } else {
+      if (!inputDate.value || !inputTime.value) { alert('请选择日期和时间'); return; }
+      const deadline = new Date(`${inputDate.value}T${inputTime.value}:00`);
+      if (isNaN(deadline.getTime())) { alert('时间格式有误'); return; }
+      tasks.push({
+        id: 't-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+        title, type,
+        deadline,
+        note: inputNote.value.trim(),
+        completed: false
+      });
+    }
+
+    saveAll(); closeModal(); render();
+  });
+
+  // ============ 校历弹窗 ============
+  const calMask = document.getElementById('calendarModalMask');
+  const calSemesterName = document.getElementById('calSemesterName');
+  const calStartDate = document.getElementById('calStartDate');
+  const calTotalWeeks = document.getElementById('calTotalWeeks');
+
+  function openCalendarModal() {
+    if (calendar) {
+      calSemesterName.value = calendar.semesterName || '';
+      calStartDate.value = calendar.startDate.toISOString().slice(0,10);
+      calTotalWeeks.value = calendar.totalWeeks || 20;
+    } else {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = (day === 0 ? 6 : day - 1);
+      const thisMonday = new Date(now);
+      thisMonday.setDate(thisMonday.getDate() - diff);
+      calSemesterName.value = '2025-2026学年 第一学期';
+      calStartDate.value = thisMonday.toISOString().slice(0,10);
+      calTotalWeeks.value = 20;
+    }
+    calMask.classList.add('show');
+  }
+  function closeCalendarModal() { calMask.classList.remove('show'); }
+
+  document.getElementById('calendarBtn').addEventListener('click', openCalendarModal);
+  document.getElementById('calendarBar').addEventListener('click', openCalendarModal);
+  document.getElementById('calendarModalClose').addEventListener('click', closeCalendarModal);
+  calMask.addEventListener('click', e => { if (e.target === calMask) closeCalendarModal(); });
+
+  document.getElementById('saveCalendarBtn').addEventListener('click', () => {
+    const name = calSemesterName.value.trim() || '未命名学期';
+    const start = calStartDate.value;
+    const total = parseInt(calTotalWeeks.value);
+    if (!start) { alert('请选择开学日期'); return; }
+    if (!total || total < 1 || total > 30) { alert('总周数应在 1-30 之间'); return; }
+
+    const sd = new Date(start + 'T00:00:00');
+    // 自动调整到所在周的周一
+    const day = sd.getDay();
+    const diff = (day === 0 ? 6 : day - 1);
+    sd.setDate(sd.getDate() - diff);
+
+    calendar = { semesterName: name, startDate: sd, totalWeeks: total };
+    saveAll(); closeCalendarModal(); render();
+  });
+
+  document.getElementById('clearCalendarBtn').addEventListener('click', () => {
+    if (confirm('清除校历后，课程将无法按周计算，确定清除？')) {
+      calendar = null;
+      localStorage.removeItem(CAL_KEY);
+      closeCalendarModal(); render();
+    }
+  });
+
+  // ============ 过滤器 ============
+  document.getElementById('filterBar').addEventListener('click', e => {
+    if (!e.target.classList.contains('filter-chip')) return;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    render();
+  });
+
+  // ============ 底部按钮 ============
+  document.getElementById('urgentBtn').addEventListener('click', () => {
+    const urgent = [...tasks]
+      .filter(t => !t.completed)
+      .sort((a,b) => (getEffectiveDeadline(a)||0) - (getEffectiveDeadline(b)||0))[0];
+    if (urgent) {
+      const el = document.querySelector(`[data-id="${urgent.id}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.outline = '3px solid #dc2626';
+        setTimeout(() => { el.style.outline = ''; }, 1500);
+      }
+    } else {
+      alert('当前没有待办事务 🎉');
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    const doneCount = tasks.filter(t => t.completed && t.type !== 'course').length;
+    if (doneCount === 0) { alert('暂无已完成事务'); return; }
+    if (confirm(`清理 ${doneCount} 项已完成事务？`)) {
+      tasks = tasks.filter(t => !(t.completed && t.type !== 'course'));
+      saveAll(); render();
+    }
+  });
+
+  // ============ 启动 ============
+  loadAll();
+  render();
+
+  setInterval(() => {
+    if (document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+    if (modalMask.classList.contains('show')) return;
+    if (calMask.classList.contains('show')) return;
+    render();
+  }, 30000);
+})();
+</script>
+</body>
+</html>
